@@ -133,7 +133,7 @@ namespace LayoutTree
         // The nodeCount parameter is used to keep track of the total number
         // of nodes in the MathML tree. For security reasons we put a hard
         // limit on this. (See cMaxMathmlNodeCount.)
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -167,7 +167,7 @@ namespace LayoutTree
 
         virtual void Optimise();
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -203,7 +203,7 @@ namespace LayoutTree
             mFont(font)
         { }
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -230,7 +230,7 @@ namespace LayoutTree
             Symbol(text, font, style, flavour, limits, colour)
         { }
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -257,7 +257,7 @@ namespace LayoutTree
             Symbol(text, font, style, flavour, limits, colour)
         { }
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -287,7 +287,7 @@ namespace LayoutTree
             )
         { }
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -337,7 +337,7 @@ namespace LayoutTree
             mIsAccent(isAccent)
         { }
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -373,7 +373,7 @@ namespace LayoutTree
             mIsUserRequested(isUserRequested)
         { }
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -391,7 +391,7 @@ namespace LayoutTree
     struct Scripts : Node
     {
         // Any of the following three fields may be NULL (i.e. empty).
-        std::auto_ptr<Node> mBase, mUpper, mLower;
+        std::unique_ptr<Node> mBase, mUpper, mLower;
 
         // True means sub/superscript; false means under/overscript.
         //
@@ -405,20 +405,20 @@ namespace LayoutTree
             Limits limits,
             RGBColour colour,
             bool isSideset,
-            std::auto_ptr<Node> base,
-            std::auto_ptr<Node> upper,
-            std::auto_ptr<Node> lower
+            std::unique_ptr<Node> base,
+            std::unique_ptr<Node> upper,
+            std::unique_ptr<Node> lower
         ) :
             Node(style, flavour, limits, colour),
             mIsSideset(isSideset),
-            mBase(base),
-            mUpper(upper),
-            mLower(lower)
+            mBase(std::move(base)),
+            mUpper(std::move(upper)),
+            mLower(std::move(lower))
         { }
 
         virtual void Optimise();
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -434,7 +434,7 @@ namespace LayoutTree
     // Represents something that will get translated as <mfrac>.
     struct Fraction : Node
     {
-        std::auto_ptr<Node> mNumerator, mDenominator;
+        std::unique_ptr<Node> mNumerator, mDenominator;
 
         // Does the fraction need a visible line?
         // True for ordinary vanilla fractions; false for things like
@@ -444,19 +444,19 @@ namespace LayoutTree
         Fraction(
             Style style,
             RGBColour colour,
-            std::auto_ptr<Node> numerator,
-            std::auto_ptr<Node> denominator,
+            std::unique_ptr<Node> numerator,
+            std::unique_ptr<Node> denominator,
             bool isLineVisible
         ) :
             Node(style, cFlavourOrd, cLimitsDisplayLimits, colour),
-            mNumerator(numerator),
-            mDenominator(denominator),
+            mNumerator(std::move(numerator)),
+            mDenominator(std::move(denominator)),
             mIsLineVisible(isLineVisible)
         { }
 
         virtual void Optimise();
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -481,24 +481,24 @@ namespace LayoutTree
         std::wstring mLeftDelimiter, mRightDelimiter;
 
         // The expression being surrounded by fences.
-        std::auto_ptr<Node> mChild;
+        std::unique_ptr<Node> mChild;
 
         Fenced(
             Style style,
             RGBColour colour,
             const std::wstring& leftDelimiter,
             const std::wstring& rightDelimiter,
-            std::auto_ptr<Node> child
+            std::unique_ptr<Node> child
         ) :
             Node(style, cFlavourInner, cLimitsDisplayLimits, colour),
             mLeftDelimiter(leftDelimiter),
             mRightDelimiter(rightDelimiter),
-            mChild(child)
+            mChild(std::move(child))
         { }
 
         virtual void Optimise();
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -516,19 +516,19 @@ namespace LayoutTree
     struct Sqrt : Node
     {
         // The expression under the radical.
-        std::auto_ptr<Node> mChild;
+        std::unique_ptr<Node> mChild;
 
         Sqrt(
-            std::auto_ptr<Node> child,
+            std::unique_ptr<Node> child,
             RGBColour colour
         ) :
             Node(child->mStyle, cFlavourOrd, cLimitsDisplayLimits, colour),
-            mChild(child)
+            mChild(std::move(child))
         { }
 
         virtual void Optimise();
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -546,21 +546,21 @@ namespace LayoutTree
     struct Root : Node
     {
         // The expressions under and outside the radical.
-        std::auto_ptr<Node> mInside, mOutside;
+        std::unique_ptr<Node> mInside, mOutside;
 
         Root(
-            std::auto_ptr<Node> inside,
-            std::auto_ptr<Node> outside,
+            std::unique_ptr<Node> inside,
+            std::unique_ptr<Node> outside,
             RGBColour colour
         ) :
             Node(inside->mStyle, cFlavourOrd, cLimitsDisplayLimits, colour),
-            mInside(inside),
-            mOutside(outside)
+            mInside(std::move(inside)),
+            mOutside(std::move(outside))
         { }
 
         virtual void Optimise();
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount
@@ -616,7 +616,7 @@ namespace LayoutTree
 
         virtual void Optimise();
 
-        virtual std::auto_ptr<MathmlNode> BuildMathmlTree(
+        virtual std::unique_ptr<MathmlNode> BuildMathmlTree(
             const MathmlOptions& options,
             const MathmlEnvironment& inheritedEnvironment,
             unsigned& nodeCount

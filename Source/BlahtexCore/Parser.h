@@ -33,7 +33,7 @@ class Parser
 public:
     // Main function that the caller should use to do a parsing job.
     // Input is a TeX string, output is the root of a parse tree.
-    std::auto_ptr<ParseTree::MathNode> DoParse(
+    std::unique_ptr<ParseTree::MathNode> DoParse(
         const std::vector<Token>& input
     );
 
@@ -89,20 +89,20 @@ public:
 private:
     // Tokens are first filtered through this MacroProcessor object, so that
     // the parser doesn't have to be aware of macros at all.
-    std::auto_ptr<MacroProcessor> mTokenSource;
+    std::unique_ptr<MacroProcessor> mTokenSource;
 
     // ParseMathList starts parsing a math list, until it reaches a command
     // indicating the end of the list, like "}" or "\right" or "\end{...}".
-    std::auto_ptr<ParseTree::MathNode> ParseMathList();
+    std::unique_ptr<ParseTree::MathNode> ParseMathList();
 
     // ParseMathField parses a TeX "math field", which is either a single
     // symbol or an expression grouped with braces.
-    std::auto_ptr<ParseTree::MathNode> ParseMathField();
+    std::unique_ptr<ParseTree::MathNode> ParseMathField();
 
     // Handle a table enclosed in something like "\begin{matrix} ...
     // \end{matrix}"; i.e. it breaks input up into entries and rows based on
     // "\\" and "&" commands.
-    std::auto_ptr<ParseTree::MathTable> ParseMathTable();
+    std::unique_ptr<ParseTree::MathTable> ParseMathTable();
 
     // PrepareScripts is called when we encounter "^" or "_". It ensures
     // that the last element of output->mChildren is a MathScripts node
@@ -114,11 +114,11 @@ private:
 
     // ParseTextList starts parsing a text list, until it reaches "}" or
     // end of input.
-    std::auto_ptr<ParseTree::TextNode> ParseTextList();
+    std::unique_ptr<ParseTree::TextNode> ParseTextList();
 
     // ParseTextField parses an argument to a command in text mode, which
     // is either a single symbol or an expression grouped with braces.
-    std::auto_ptr<ParseTree::TextNode> ParseTextField();
+    std::unique_ptr<ParseTree::TextNode> ParseTextField();
 
     // These functions determine the appropriate token code for the supplied
     // token. Things like "1", "a", "+" are handled appropriately, as are

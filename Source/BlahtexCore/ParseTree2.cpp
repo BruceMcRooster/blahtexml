@@ -648,7 +648,7 @@ wishful_hash_map<wstring, IdentifierInfo> identifierTable(
 namespace ParseTree
 {
 
-auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -700,7 +700,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
                 );
 
             if (isNumber)
-                return auto_ptr<LayoutTree::Node>(
+                return unique_ptr<LayoutTree::Node>(
                     new LayoutTree::SymbolNumber(
                         mCommand,
                         font.GetMathmlApproximation(),
@@ -711,7 +711,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
                     )
                 );
             else
-                return auto_ptr<LayoutTree::Node>(
+                return unique_ptr<LayoutTree::Node>(
                     new LayoutTree::SymbolIdentifier(
                         mCommand,
                         font.GetMathmlApproximation(),
@@ -736,7 +736,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
 
     if (lowercaseGreekLookup != lowercaseGreekTable.end())
     {
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::SymbolIdentifier(
                 wstring(1, lowercaseGreekLookup->second),
                 // lowercase greek is only affected by the boldsymbol
@@ -775,7 +775,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
         if (font.mFamily == TexMathFont::cFamilyDefault)
             font.mFamily = TexMathFont::cFamilyRm;
 
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::SymbolIdentifier(
                 wstring(1, uppercaseGreekLookup->second),
                 font.GetMathmlApproximation(),
@@ -792,7 +792,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
 
     if (spaceLookup != spaceTable.end())
     {
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::Space(
                 spaceLookup->second,
                 true      // true = indicates a user-requested space
@@ -805,7 +805,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
 
     if (operatorLookup != operatorTable.end())
     {
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::SymbolOperator(
                 false, L"",     // not stretchy
                 false,          // not an accent
@@ -832,7 +832,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             identifierLookup->second.mIsItalicDefault
                 ? TexMathFont::cFamilyIt : TexMathFont::cFamilyRm;
 
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::SymbolIdentifier(
                 identifierLookup->second.mText,
                 font.GetMathmlApproximation(),
@@ -852,7 +852,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
 
     if (mCommand == L"\\And")
     {
-        auto_ptr<LayoutTree::Row> row(
+        unique_ptr<LayoutTree::Row> row(
             new LayoutTree::Row(state.mStyle, state.mColour)
         );
         row->mFlavour = LayoutTree::Node::cFlavourRel;
@@ -872,12 +872,12 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             )
         );
         row->mChildren.push_back(new LayoutTree::Space(5, true));
-        return static_cast<auto_ptr<LayoutTree::Node> >(row);
+        return std::unique_ptr<LayoutTree::Node>(std::move(row));
     }
 
     if (mCommand == L"\\iff")
     {
-        auto_ptr<LayoutTree::Row> row(
+        unique_ptr<LayoutTree::Row> row(
             new LayoutTree::Row(state.mStyle, state.mColour)
         );
         row->mFlavour = LayoutTree::Node::cFlavourRel;
@@ -902,7 +902,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             )
         );
         row->mChildren.push_back(new LayoutTree::Space(5, true));
-        return static_cast<auto_ptr<LayoutTree::Node> >(row);
+        return std::unique_ptr<LayoutTree::Node>(std::move(row));
     }
 
     if (mCommand == L"\\colon")
@@ -910,7 +910,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
         // FIX: this spacing stuff isn't quite right, but it will hopefully
         // do. The amsmath package does all kinds of interesting things with
         // \colon's spacing.
-        auto_ptr<LayoutTree::Row> row(
+        unique_ptr<LayoutTree::Row> row(
             new LayoutTree::Row(state.mStyle, state.mColour)
         );
         row->mChildren.push_back(new LayoutTree::Space(2, true));
@@ -929,12 +929,12 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             )
         );
         row->mChildren.push_back(new LayoutTree::Space(6, true));
-        return static_cast<auto_ptr<LayoutTree::Node> >(row);
+        return std::unique_ptr<LayoutTree::Node>(std::move(row));
     }
 
     if (mCommand == L"\\bmod")
     {
-        auto_ptr<LayoutTree::Row> row(
+        unique_ptr<LayoutTree::Row> row(
             new LayoutTree::Row(state.mStyle, state.mColour)
         );
         row->mFlavour = LayoutTree::Node::cFlavourBin;
@@ -954,12 +954,12 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             )
         );
         row->mChildren.push_back(new LayoutTree::Space(1, true));
-        return static_cast<auto_ptr<LayoutTree::Node> >(row);
+        return std::unique_ptr<LayoutTree::Node>(std::move(row));
     }
 
     if (mCommand == L"\\mod")
     {
-        auto_ptr<LayoutTree::Row> row(
+        unique_ptr<LayoutTree::Row> row(
             new LayoutTree::Row(state.mStyle, state.mColour)
         );
         row->mChildren.push_back(new LayoutTree::Space(18, true));
@@ -978,7 +978,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             )
         );
         row->mChildren.push_back(new LayoutTree::Space(6, true));
-        return static_cast<auto_ptr<LayoutTree::Node> >(row);
+        return std::unique_ptr<LayoutTree::Node>(std::move(row));
     }
 
     if (mCommand == L"\\varinjlim" || mCommand == L"\\varprojlim" ||
@@ -988,7 +988,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             state.mMathFont.mIsBoldsymbol
                 ? cMathmlFontBold : cMathmlFontNormal;
 
-        auto_ptr<LayoutTree::Node> base(
+        unique_ptr<LayoutTree::Node> base(
             new LayoutTree::SymbolOperator(
                 false,
                 L"",
@@ -1002,21 +1002,21 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             )
         );
 
-        auto_ptr<LayoutTree::Scripts> node(
+        unique_ptr<LayoutTree::Scripts> node(
             new LayoutTree::Scripts(
                 state.mStyle,
                 LayoutTree::Node::cFlavourOp,
                 LayoutTree::Node::cLimitsDisplayLimits,
                 state.mColour,
                 false,
-                base,
-                auto_ptr<LayoutTree::Node>(),
-                auto_ptr<LayoutTree::Node>()
+                std::move(base),
+                unique_ptr<LayoutTree::Node>(),
+                unique_ptr<LayoutTree::Node>()
             )
         );
 
         if (mCommand == L"\\varinjlim")
-            node->mLower = auto_ptr<LayoutTree::Node>(
+            node->mLower = unique_ptr<LayoutTree::Node>(
                 new LayoutTree::SymbolOperator(
                     false,
                     L"",
@@ -1031,7 +1031,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             );
 
         else if (mCommand == L"\\varprojlim")
-            node->mLower = auto_ptr<LayoutTree::Node>(
+            node->mLower = unique_ptr<LayoutTree::Node>(
                 new LayoutTree::SymbolOperator(
                     false,
                     L"",
@@ -1046,7 +1046,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             );
 
         else if (mCommand == L"\\varliminf")
-            node->mLower = auto_ptr<LayoutTree::Node>(
+            node->mLower = unique_ptr<LayoutTree::Node>(
                 new LayoutTree::SymbolOperator(
                     true,
                     L"",
@@ -1061,7 +1061,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
             );
 
         else if (mCommand == L"\\varlimsup")
-            node->mUpper = auto_ptr<LayoutTree::Node>(
+            node->mUpper = unique_ptr<LayoutTree::Node>(
                 new LayoutTree::SymbolOperator(
                     true,
                     L"",
@@ -1075,7 +1075,7 @@ auto_ptr<LayoutTree::Node> MathSymbol::BuildLayoutTree(
                 )
             );
 
-        return static_cast<auto_ptr<LayoutTree::Node> >(node);
+        return std::unique_ptr<LayoutTree::Node>(std::move(node));
     }
 
     throw logic_error("Unexpected command in MathSymbol::BuildLayoutTree");

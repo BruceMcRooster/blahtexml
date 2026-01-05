@@ -943,12 +943,12 @@ Parser::TokenCode Parser::GetTextTokenCode(const Token& token) const
     throw Exception(L"UnrecognisedCommand", value);
 }
 
-auto_ptr<ParseTree::MathNode> Parser::DoParse(const vector<Token>& input)
+unique_ptr<ParseTree::MathNode> Parser::DoParse(const vector<Token>& input)
 {
     mTokenSource.reset(new MacroProcessor(input));
 
     // Parse until we hit a closing token of some kind...
-    auto_ptr<ParseTree::MathNode> output = ParseMathList();
+    unique_ptr<ParseTree::MathNode> output = ParseMathList();
 
     // ... and check that the closing token is actually the end of input.
     switch (GetMathTokenCode(mTokenSource->Peek()))
@@ -966,7 +966,7 @@ auto_ptr<ParseTree::MathNode> Parser::DoParse(const vector<Token>& input)
     throw logic_error("Unexpected token code in Parser::DoParse");
 }
 
-auto_ptr<ParseTree::MathNode> Parser::ParseMathField()
+unique_ptr<ParseTree::MathNode> Parser::ParseMathField()
 {
     mTokenSource->SkipWhitespace();
 	Token &token = mTokenSource->GetToken();
@@ -975,14 +975,14 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathField()
     switch (GetMathTokenCode(token))
     {
         case cSymbol:
-            return auto_ptr<ParseTree::MathNode>(
+            return unique_ptr<ParseTree::MathNode>(
                 new ParseTree::MathSymbol(command)
             );
 
         case cBeginGroup:
         {
             // Grab the argument surrounded by braces
-            auto_ptr<ParseTree::MathNode> field = ParseMathList();
+            unique_ptr<ParseTree::MathNode> field = ParseMathList();
 
             // Gobble closing brace
             if (mTokenSource->Get() != L"}") {
@@ -1004,15 +1004,15 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathField()
     throw Exception(L"MissingOpenBraceBefore", command);
 }
 
-auto_ptr<ParseTree::MathTable> Parser::ParseMathTable()
+unique_ptr<ParseTree::MathTable> Parser::ParseMathTable()
 {
-    auto_ptr<ParseTree::MathTable> table(new ParseTree::MathTable);
+    unique_ptr<ParseTree::MathTable> table(new ParseTree::MathTable);
     // "row" holds the current, incomplete row being parsed
-    auto_ptr<ParseTree::MathTableRow> row(new ParseTree::MathTableRow);
+    unique_ptr<ParseTree::MathTableRow> row(new ParseTree::MathTableRow);
 
     while (true)
     {
-        auto_ptr<ParseTree::MathNode> entry = ParseMathList();
+        unique_ptr<ParseTree::MathNode> entry = ParseMathList();
 
         switch (GetMathTokenCode(mTokenSource->Peek()))
         {
@@ -1131,14 +1131,14 @@ wstring Parser::ParseColourName()
 }
 
 
-auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
+unique_ptr<ParseTree::MathNode> Parser::ParseMathList()
 {
-    auto_ptr<ParseTree::MathList> output(new ParseTree::MathList);
+    unique_ptr<ParseTree::MathList> output(new ParseTree::MathList);
 
     // infixNumerator temporarily holds the numerator of an infix command
     // (like "\over"), while we are waiting for the denominator to be
     // fully built up...
-    auto_ptr<ParseTree::MathList> infixNumerator;
+    unique_ptr<ParseTree::MathList> infixNumerator;
     // and the infix command itself is stored here:
     wstring infixCommand;
 
@@ -1157,13 +1157,13 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                 // should be needed, but gcc 3.3 seems to require them.
                 // Don't know about later versions.
                 if (!infixCommand.empty())
-                    return auto_ptr<ParseTree::MathNode>(
+                    return unique_ptr<ParseTree::MathNode>(
                         new ParseTree::MathCommand2Args(
                             infixCommand,
-                            static_cast<auto_ptr<ParseTree::MathNode> >
-                                (infixNumerator),
-                            static_cast<auto_ptr<ParseTree::MathNode> >
-                                (output),
+                            std::unique_ptr<ParseTree::MathNode>
+                                (std::move(infixNumerator)),
+                            std::unique_ptr<ParseTree::MathNode>
+                                (std::move(output)),
                             true   // true = this is an infix command rather
                                    // than a two-argument command
                         )
@@ -1177,15 +1177,15 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                         // it from output->mChildren to respect ownership
                         // rules; otherwise output's destructor will delete
                         // it *again*).
-                        auto_ptr<ParseTree::MathNode> temp(
+                        unique_ptr<ParseTree::MathNode> temp(
                             output->mChildren.back()
                         );
                         output->mChildren.clear();
                         return temp;
                     }
                     else
-                        return static_cast<auto_ptr<ParseTree::MathNode> >
-                            (output);
+                        return std::unique_ptr<ParseTree::MathNode>
+                            (std::move(output));
                 }
             }
 
@@ -1235,7 +1235,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                 wstring name
                     = beginCommand.substr(7, beginCommand.size() - 8);
 
-                auto_ptr<ParseTree::MathTable> table = ParseMathTable();
+                unique_ptr<ParseTree::MathTable> table = ParseMathTable();
 
                 Token & endCommand = mTokenSource->GetToken();
 				wstring endCommandValue = endCommand.getValue();
@@ -1263,7 +1263,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                 }
 
                 output->mChildren.push_back(
-                    new ParseTree::MathEnvironment(name, table, false)
+                    new ParseTree::MathEnvironment(name, std::move(table), false)
                 );
                 break;
             }
@@ -1280,7 +1280,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                 if (mTokenSource->Get() != L"{")
                     throw Exception(L"MissingOpenBraceAfter", command);
 
-                auto_ptr<ParseTree::MathTable> table = ParseMathTable();
+                unique_ptr<ParseTree::MathTable> table = ParseMathTable();
 
                 if (name == L"substack")
                 {
@@ -1301,7 +1301,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                     throw Exception(L"UnmatchedOpenBrace");
 
                 output->mChildren.push_back(
-                    new ParseTree::MathEnvironment(name, table, true)
+                    new ParseTree::MathEnvironment(name, std::move(table), true)
                 );
                 break;
             }
@@ -1332,7 +1332,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                 else if (!gDelimiterTable.count(left))
                     throw Exception(L"IllegalDelimiter", L"\\left");
 
-                auto_ptr<ParseTree::MathNode> child = ParseMathList();
+                unique_ptr<ParseTree::MathNode> child = ParseMathList();
 
                 if (mTokenSource->Peek().getValue() != L"\\right")
                     throw Exception(L"UnmatchedLeft");
@@ -1346,7 +1346,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                     throw Exception(L"IllegalDelimiter", L"\\right");
 
                 output->mChildren.push_back(
-                    new ParseTree::MathDelimited(child, left, right)
+                    new ParseTree::MathDelimited(std::move(child), left, right)
                 );
                 break;
             }
@@ -1398,7 +1398,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                 // It (hopefully) has the same effect as the macro
                 // that TeX uses for the prime symbol.
 
-                auto_ptr<ParseTree::MathList> superscript(
+                unique_ptr<ParseTree::MathList> superscript(
                     new ParseTree::MathList
                 );
 
@@ -1425,8 +1425,8 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
 
                 target->mUpper.reset(
                     new ParseTree::MathGroup(
-                        static_cast<auto_ptr<ParseTree::MathNode> >
-                            (superscript)
+                        std::unique_ptr<ParseTree::MathNode>
+                            (std::move(superscript))
                     )
                 );
                 break;
@@ -1449,12 +1449,12 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
 
                 if (scripts)
                     scripts->mBase.reset(
-                        new ParseTree::MathLimits(command, scripts->mBase)
+                        new ParseTree::MathLimits(command, std::move(scripts->mBase))
                     );
                 else
                     output->mChildren.back() = new ParseTree::MathLimits(
                         command,
-                        auto_ptr<ParseTree::MathNode>(
+                        unique_ptr<ParseTree::MathNode>(
                             output->mChildren.back()
                         )
                     );
@@ -1490,11 +1490,11 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
             case cCommand2Args:
             {
                 wstring command = translateToken(mTokenSource->Get());
-                auto_ptr<ParseTree::MathNode> child1 = ParseMathField();
-                auto_ptr<ParseTree::MathNode> child2 = ParseMathField();
+                unique_ptr<ParseTree::MathNode> child1 = ParseMathField();
+                unique_ptr<ParseTree::MathNode> child2 = ParseMathField();
                 output->mChildren.push_back(
                     new ParseTree::MathCommand2Args(
-                        command, child1, child2, false
+                        command, std::move(child1), std::move(child2), false
                     )
                 );
                 break;
@@ -1512,7 +1512,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
                 // being processed and dump it temporarily in
                 // "infixNumerator", and start processing the "denominator".
 
-                infixNumerator = output;
+                infixNumerator = std::move(output);
                 infixCommand = translateToken(mTokenSource->Get());
                 output.reset(new ParseTree::MathList);
                 break;
@@ -1529,7 +1529,7 @@ auto_ptr<ParseTree::MathNode> Parser::ParseMathList()
     throw logic_error("Unexpected control flow in Parser::ParseMathList");
 }
 
-auto_ptr<ParseTree::TextNode> Parser::ParseTextField()
+unique_ptr<ParseTree::TextNode> Parser::ParseTextField()
 {
     mTokenSource->SkipWhitespace();
     Token & token = mTokenSource->GetToken();
@@ -1537,13 +1537,13 @@ auto_ptr<ParseTree::TextNode> Parser::ParseTextField()
     switch (GetTextTokenCode(token))
     {
         case cSymbol:
-            return auto_ptr<ParseTree::TextNode>(
+            return unique_ptr<ParseTree::TextNode>(
                 new ParseTree::TextSymbol(token.getValue())
             );
 
         case cBeginGroup:
         {
-            auto_ptr<ParseTree::TextNode> field(
+            unique_ptr<ParseTree::TextNode> field(
                 new ParseTree::TextGroup(ParseTextList())
             );
             if (mTokenSource->Peek().getValue() != L"}")
@@ -1559,9 +1559,9 @@ auto_ptr<ParseTree::TextNode> Parser::ParseTextField()
     throw Exception(L"MissingOpenBraceBefore", token.getValue());
 }
 
-auto_ptr<ParseTree::TextNode> Parser::ParseTextList()
+unique_ptr<ParseTree::TextNode> Parser::ParseTextList()
 {
-    auto_ptr<ParseTree::TextList> output(new ParseTree::TextList);
+    unique_ptr<ParseTree::TextList> output(new ParseTree::TextList);
 
     while (true)
     {
@@ -1576,11 +1576,11 @@ auto_ptr<ParseTree::TextNode> Parser::ParseTextList()
                     // single node.
                     ParseTree::TextNode* temp = output->mChildren.back();
                     output->mChildren.pop_back();
-                    return auto_ptr<ParseTree::TextNode>(temp);
+                    return unique_ptr<ParseTree::TextNode>(temp);
                 }
                 else
-                    return static_cast<auto_ptr<ParseTree::TextNode> >(
-                        output
+                    return std::unique_ptr<ParseTree::TextNode>(
+                        std::move(output)
                     );
             }
 

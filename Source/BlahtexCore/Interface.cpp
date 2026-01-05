@@ -34,7 +34,7 @@ void Interface::ProcessInput(const wstring& input, bool displayStyle)
 wstring Interface::GetMathml()
 {
     wostringstream output;
-    auto_ptr<MathmlNode> root = mManager->GenerateMathml(mMathmlOptions);
+    unique_ptr<MathmlNode> root = mManager->GenerateMathml(mMathmlOptions);
     root->Print(output, mEncodingOptions, mIndented);
     return output.str();
 }
@@ -53,7 +53,7 @@ wstring Interface::GetPurifiedTexOnly()
 void Interface::PrintAsSAX2(ContentHandler& sax, const wstring& prefix, bool ignoreFirstmrow) const
 {
     wostringstream output;
-    auto_ptr<MathmlNode> root = mManager->GenerateMathml(mMathmlOptions);
+    unique_ptr<MathmlNode> root = mManager->GenerateMathml(mMathmlOptions);
     root->PrintAsSAX2(sax, prefix, ignoreFirstmrow);
 }
 #endif

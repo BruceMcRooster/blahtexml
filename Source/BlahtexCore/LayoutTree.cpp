@@ -154,8 +154,8 @@ wstring FormatColour(RGBColour colour)
 // extra <mstyle> node around every table to handle the scriptlevel.
 #define MOZILLA_BUG_328141_WORKAROUND 1
 
-auto_ptr<MathmlNode> AdjustMathmlEnvironment(
-    auto_ptr<MathmlNode> node,
+unique_ptr<MathmlNode> AdjustMathmlEnvironment(
+    unique_ptr<MathmlNode> node,
     MathmlEnvironment sourceEnvironment,
     MathmlEnvironment targetEnvironment
 )
@@ -170,7 +170,7 @@ auto_ptr<MathmlNode> AdjustMathmlEnvironment(
     )
         return node;
 
-    auto_ptr<MathmlNode> newNode(new MathmlNode(MathmlNode::cTypeMstyle));
+    unique_ptr<MathmlNode> newNode(new MathmlNode(MathmlNode::cTypeMstyle));
 
     if (sourceEnvironment.mDisplayStyle != targetEnvironment.mDisplayStyle)
     {
@@ -241,7 +241,7 @@ auto_ptr<MathmlNode> AdjustMathmlEnvironment(
 }
 
 
-auto_ptr<MathmlNode> Row::BuildMathmlTree(
+unique_ptr<MathmlNode> Row::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
@@ -253,7 +253,7 @@ auto_ptr<MathmlNode> Row::BuildMathmlTree(
     // environment for each node. Then, do a second pass inserting <mstyle>
     // nodes to implement those desired environments.
     
-    auto_ptr<MathmlNode> outputNode(new MathmlNode(MathmlNode::cTypeMrow));
+    unique_ptr<MathmlNode> outputNode(new MathmlNode(MathmlNode::cTypeMrow));
     list<MathmlNode*>& outputList = outputNode->mChildren;
 
     IncrementNodeCount(nodeCount);
@@ -400,7 +400,7 @@ auto_ptr<MathmlNode> Row::BuildMathmlTree(
 
                 if (spaceWidth != 0 || (isPreviousMi && isCurrentMi))
                 {
-                    auto_ptr<MathmlNode> spaceNode(
+                    unique_ptr<MathmlNode> spaceNode(
                         new MathmlNode(MathmlNode::cTypeMspace)
                     );
                     IncrementNodeCount(nodeCount);
@@ -449,7 +449,7 @@ auto_ptr<MathmlNode> Row::BuildMathmlTree(
             list<MathmlNode*>::iterator previousOutputPtr = outputPtr;
             previousOutputPtr++;
             
-            auto_ptr<MathmlNode> enclosedNode;
+            unique_ptr<MathmlNode> enclosedNode;
             
             if (--outputList.end() == previousOutputPtr)
             {
@@ -471,7 +471,7 @@ auto_ptr<MathmlNode> Row::BuildMathmlTree(
             
             outputList.push_back(
                 AdjustMathmlEnvironment(
-                    enclosedNode,
+                    std::move(enclosedNode),
                     environment[0],
                     environment[-1]
                 ).release()
@@ -492,7 +492,7 @@ auto_ptr<MathmlNode> Row::BuildMathmlTree(
     }
 
     return AdjustMathmlEnvironment(
-        outputNode,
+        std::move(outputNode),
         inheritedEnvironment,
         environments[0]
     );
@@ -534,13 +534,13 @@ uint32_t FixOutOfSequenceMathmlCharacter(uint32_t c)
 }
 
 
-auto_ptr<MathmlNode> SymbolIdentifier::BuildMathmlTree(
+unique_ptr<MathmlNode> SymbolIdentifier::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
 ) const
 {
-    auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMi, mText));
+    unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMi, mText));
     IncrementNodeCount(nodeCount);
 
     // Here we have a special case to deal with the "fancy" fonts
@@ -649,7 +649,7 @@ auto_ptr<MathmlNode> SymbolIdentifier::BuildMathmlTree(
 #endif
 
         return AdjustMathmlEnvironment(
-            node,
+            std::move(node),
             inheritedEnvironment,
             MathmlEnvironment(mStyle, mColour)
         );
@@ -657,12 +657,12 @@ auto_ptr<MathmlNode> SymbolIdentifier::BuildMathmlTree(
 
     node->AddFontAttributes(mFont, options);
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
+        std::move(node), inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
     );
 }
 
 
-auto_ptr<MathmlNode> SymbolOperator::BuildMathmlTree(
+unique_ptr<MathmlNode> SymbolOperator::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
@@ -716,8 +716,8 @@ auto_ptr<MathmlNode> SymbolOperator::BuildMathmlTree(
     // Special case for "\not":
     if (mText == L"NOT")
     {
-        auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMpadded));
-        auto_ptr<MathmlNode> space(new MathmlNode(MathmlNode::cTypeMspace));
+        unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMpadded));
+        unique_ptr<MathmlNode> space(new MathmlNode(MathmlNode::cTypeMspace));
         space->mAttributes[MathmlNode::cAttributeWidth] = L"0.1em";
         node->mChildren.push_back(space.release());
         node->mChildren.push_back(
@@ -739,7 +739,7 @@ auto_ptr<MathmlNode> SymbolOperator::BuildMathmlTree(
         END_ARRAY(accentByDefaultArray)
     );
 
-    auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMo, mText));
+    unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMo, mText));
 
     if (mIsStretchy)
     {
@@ -762,12 +762,12 @@ auto_ptr<MathmlNode> SymbolOperator::BuildMathmlTree(
     node->AddFontAttributes(mFont, options);
 
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
+        std::move(node), inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
     );
 }
 
 
-auto_ptr<MathmlNode> SymbolNumber::BuildMathmlTree(
+unique_ptr<MathmlNode> SymbolNumber::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
@@ -776,33 +776,33 @@ auto_ptr<MathmlNode> SymbolNumber::BuildMathmlTree(
     // FIX: what about merging commas, decimal points into <mn> nodes?
     // Might need to special-case it.
 
-    auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMn, mText));
+    unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMn, mText));
     IncrementNodeCount(nodeCount);
     node->AddFontAttributes(mFont, options);
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
+        std::move(node), inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
     );
 }
 
 
-auto_ptr<MathmlNode> SymbolText::BuildMathmlTree(
+unique_ptr<MathmlNode> SymbolText::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
 ) const
 {
-    auto_ptr<MathmlNode> node(
+    unique_ptr<MathmlNode> node(
         new MathmlNode(MathmlNode::cTypeMtext, mText)
     );
     IncrementNodeCount(nodeCount);
     node->AddFontAttributes(mFont, options);
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
+        std::move(node), inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
     );
 }
 
 
-auto_ptr<MathmlNode> Sqrt::BuildMathmlTree(
+unique_ptr<MathmlNode> Sqrt::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
@@ -810,18 +810,18 @@ auto_ptr<MathmlNode> Sqrt::BuildMathmlTree(
 {
     MathmlEnvironment desiredEnvironment(mStyle, mColour);
 
-    auto_ptr<MathmlNode> child =
+    unique_ptr<MathmlNode> child =
         mChild->BuildMathmlTree(
             options, desiredEnvironment, nodeCount
         );
     
-    auto_ptr<MathmlNode> node;
+    unique_ptr<MathmlNode> node;
     
     if (child->mType == MathmlNode::cTypeMrow)
     {
         // This removes redundant <mrow>s, i.e. things like
         // <msqrt><mrow>...</mrow></msqrt>
-        node = child;
+        node = std::move(child);
         node->mType = MathmlNode::cTypeMsqrt;
     }
     else
@@ -832,18 +832,18 @@ auto_ptr<MathmlNode> Sqrt::BuildMathmlTree(
     }
 
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, desiredEnvironment
+        std::move(node), inheritedEnvironment, desiredEnvironment
     );
 }
 
 
-auto_ptr<MathmlNode> Root::BuildMathmlTree(
+unique_ptr<MathmlNode> Root::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
 ) const
 {
-    auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMroot));
+    unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMroot));
     IncrementNodeCount(nodeCount);
 
     MathmlEnvironment desiredEnvironment(mStyle, mColour);
@@ -865,12 +865,12 @@ auto_ptr<MathmlNode> Root::BuildMathmlTree(
     );
     
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, desiredEnvironment
+        std::move(node), inheritedEnvironment, desiredEnvironment
     );
 }
 
 
-auto_ptr<MathmlNode> Scripts::BuildMathmlTree(
+unique_ptr<MathmlNode> Scripts::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
@@ -883,7 +883,7 @@ auto_ptr<MathmlNode> Scripts::BuildMathmlTree(
     scriptEnvironment.mDisplayStyle = false;
     scriptEnvironment.mScriptLevel++;
 
-    auto_ptr<MathmlNode> base;
+    unique_ptr<MathmlNode> base;
     if (mBase.get())
         base = mBase->BuildMathmlTree(options, baseEnvironment, nodeCount);
     else
@@ -911,7 +911,7 @@ auto_ptr<MathmlNode> Scripts::BuildMathmlTree(
             ? MathmlNode::cTypeMsub
             : MathmlNode::cTypeMunder;
 
-    auto_ptr<MathmlNode> scriptsNode(new MathmlNode(type));
+    unique_ptr<MathmlNode> scriptsNode(new MathmlNode(type));
     IncrementNodeCount(nodeCount);
     scriptsNode->mChildren.push_back(base.release());
 
@@ -970,12 +970,12 @@ auto_ptr<MathmlNode> Scripts::BuildMathmlTree(
     }
 
     return AdjustMathmlEnvironment(
-        scriptsNode, inheritedEnvironment, baseEnvironment
+        std::move(scriptsNode), inheritedEnvironment, baseEnvironment
     );
 }
 
 
-auto_ptr<MathmlNode> Fraction::BuildMathmlTree(
+unique_ptr<MathmlNode> Fraction::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
@@ -989,7 +989,7 @@ auto_ptr<MathmlNode> Fraction::BuildMathmlTree(
     else
         smallerEnvironment.mScriptLevel++;
 
-    auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMfrac));
+    unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMfrac));
     IncrementNodeCount(nodeCount);
 
     node->mChildren.push_back(
@@ -1008,12 +1008,12 @@ auto_ptr<MathmlNode> Fraction::BuildMathmlTree(
             [MathmlNode::cAttributeLinethickness] = L"0";
 
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, baseEnvironment
+        std::move(node), inheritedEnvironment, baseEnvironment
     );
 }
 
 
-auto_ptr<MathmlNode> Space::BuildMathmlTree(
+unique_ptr<MathmlNode> Space::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
@@ -1026,7 +1026,7 @@ auto_ptr<MathmlNode> Space::BuildMathmlTree(
 
     // FIX: what happens with negative space?
 
-    auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMspace));
+    unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMspace));
     IncrementNodeCount(nodeCount);
 
     wostringstream wos;
@@ -1037,13 +1037,13 @@ auto_ptr<MathmlNode> Space::BuildMathmlTree(
 }
 
 
-auto_ptr<MathmlNode> Fenced::BuildMathmlTree(
+unique_ptr<MathmlNode> Fenced::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
 ) const
 {
-    auto_ptr<MathmlNode> inside = mChild->BuildMathmlTree(
+    unique_ptr<MathmlNode> inside = mChild->BuildMathmlTree(
         options, MathmlEnvironment(mStyle, mColour), nodeCount
     );
 
@@ -1056,21 +1056,21 @@ auto_ptr<MathmlNode> Fenced::BuildMathmlTree(
         // an <mrow>. (I don't really understand why this is necessary,
         // but the MathML spec suggests it, and Firefox seems a bit fussy,
         // so let's just do it.)
-        auto_ptr<MathmlNode> temp(new MathmlNode(MathmlNode::cTypeMrow));
+        unique_ptr<MathmlNode> temp(new MathmlNode(MathmlNode::cTypeMrow));
         IncrementNodeCount(nodeCount);
         temp->mChildren.push_back(inside.release());
-        inside = temp;
+        inside = std::move(temp);
     }
 
     // And surround the whole thing by an <mrow> as well.
     // (This one makes more sense... we want the delimiters to stretch
     // around the correct stuff.)
-    auto_ptr<MathmlNode> output(new MathmlNode(MathmlNode::cTypeMrow));
+    unique_ptr<MathmlNode> output(new MathmlNode(MathmlNode::cTypeMrow));
     IncrementNodeCount(nodeCount);
 
     if (!mLeftDelimiter.empty())
     {
-        auto_ptr<MathmlNode> node(
+        unique_ptr<MathmlNode> node(
             new MathmlNode(MathmlNode::cTypeMo, mLeftDelimiter)
         );
         IncrementNodeCount(nodeCount);
@@ -1082,7 +1082,7 @@ auto_ptr<MathmlNode> Fenced::BuildMathmlTree(
 
     if (!mRightDelimiter.empty())
     {
-        auto_ptr<MathmlNode> node(
+        unique_ptr<MathmlNode> node(
             new MathmlNode(MathmlNode::cTypeMo, mRightDelimiter)
         );
         IncrementNodeCount(nodeCount);
@@ -1091,18 +1091,18 @@ auto_ptr<MathmlNode> Fenced::BuildMathmlTree(
     }
 
     return AdjustMathmlEnvironment(
-        output, inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
+        std::move(output), inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
     );
 }
 
 
-auto_ptr<MathmlNode> Table::BuildMathmlTree(
+unique_ptr<MathmlNode> Table::BuildMathmlTree(
     const MathmlOptions& options,
     const MathmlEnvironment& inheritedEnvironment,
     unsigned& nodeCount
 ) const
 {
-    auto_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMtable));
+    unique_ptr<MathmlNode> node(new MathmlNode(MathmlNode::cTypeMtable));
     IncrementNodeCount(nodeCount);
 
     // Compute the table width. We do this so we can "fill out" each
@@ -1147,7 +1147,7 @@ auto_ptr<MathmlNode> Table::BuildMathmlTree(
         inRow++
     )
     {
-        auto_ptr<MathmlNode> outRow(new MathmlNode(MathmlNode::cTypeMtr));
+        unique_ptr<MathmlNode> outRow(new MathmlNode(MathmlNode::cTypeMtr));
         IncrementNodeCount(nodeCount);
         int count = 0;
         for (vector<Node*>::const_iterator
@@ -1156,12 +1156,12 @@ auto_ptr<MathmlNode> Table::BuildMathmlTree(
             inEntry++, count++
         )
         {
-            auto_ptr<MathmlNode> outEntry(
+            unique_ptr<MathmlNode> outEntry(
                 new MathmlNode(MathmlNode::cTypeMtd)
             );
             IncrementNodeCount(nodeCount);
         
-            auto_ptr<MathmlNode> child =
+            unique_ptr<MathmlNode> child =
                 (*inEntry)->BuildMathmlTree(
                     options, MathmlEnvironment(mStyle, mColour), nodeCount
                 );
@@ -1175,14 +1175,14 @@ auto_ptr<MathmlNode> Table::BuildMathmlTree(
             if (child->mType == MathmlNode::cTypeMrow)
             {
                 child->mType = MathmlNode::cTypeMtd;
-                outEntry = child;
+                outEntry = std::move(child);
             }
             else
                 outEntry->mChildren.push_back(child.release());
 #else
             if (child->mType != MathmlNode::cTypeMrow)
             {
-                auto_ptr<MathmlNode> temp(
+                unique_ptr<MathmlNode> temp(
                     new MathmlNode(MathmlNode::cTypeMrow)
                 );
                 IncrementNodeCount(nodeCount);
@@ -1208,7 +1208,7 @@ auto_ptr<MathmlNode> Table::BuildMathmlTree(
     }
 
     return AdjustMathmlEnvironment(
-        node, inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
+        std::move(node), inheritedEnvironment, MathmlEnvironment(mStyle, mColour)
     );
 }
 

@@ -74,11 +74,11 @@ namespace ParseTree
 {
 
 
-auto_ptr<LayoutTree::Node> MathList::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathList::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
-    auto_ptr<LayoutTree::Row> output(
+    unique_ptr<LayoutTree::Row> output(
         new LayoutTree::Row(state.mStyle, state.mColour)
     );
     list<LayoutTree::Node*>& targetList = output->mChildren;
@@ -261,7 +261,7 @@ auto_ptr<LayoutTree::Node> MathList::BuildLayoutTree(
         }
     }
 
-    return static_cast< auto_ptr<LayoutTree::Node> >(output);
+    return std::unique_ptr<LayoutTree::Node>(std::move(output));
 }
 
 
@@ -280,12 +280,12 @@ struct AccentInfo {
 };
 
 
-auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
     if (mCommand == L"\\sqrt")
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::Sqrt(
                 mChild->BuildLayoutTree(state),
                 state.mColour
@@ -294,7 +294,7 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
 
     if (mCommand == L"\\overbrace" || mCommand == L"\\underbrace")
     {
-        auto_ptr<LayoutTree::Node> brace(
+        unique_ptr<LayoutTree::Node> brace(
             new LayoutTree::SymbolOperator(
                 true,
                 L"",
@@ -314,9 +314,9 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
                 ? LayoutTree::Node::cStyleDisplay
                 : LayoutTree::Node::cStyleText;
 
-        auto_ptr<LayoutTree::Node> empty;
+        unique_ptr<LayoutTree::Node> empty;
 
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::Scripts(
                 newState.mStyle,
                 LayoutTree::Node::cFlavourOp,
@@ -324,15 +324,15 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
                 state.mColour,
                 false,
                 mChild->BuildLayoutTree(newState),
-                (mCommand == L"\\overbrace")  ? brace : empty,
-                (mCommand == L"\\underbrace") ? brace : empty
+                (mCommand == L"\\overbrace")  ? std::move(brace) : std::move(empty),
+                (mCommand == L"\\underbrace") ? std::move(brace) : std::move(empty)
             )
         );
     }
 
     if (mCommand == L"\\pmod")
     {
-        auto_ptr<LayoutTree::Row> row(
+        unique_ptr<LayoutTree::Row> row(
             new LayoutTree::Row(state.mStyle, state.mColour)
         );
 
@@ -385,7 +385,7 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
             )
         );
 
-        return static_cast<auto_ptr<LayoutTree::Node> >(row);
+        return std::unique_ptr<LayoutTree::Node>(std::move(row));
     }
 
     if (mCommand == L"\\operatorname" ||
@@ -402,7 +402,7 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
 
         TexProcessingState newState = state;
         newState.mMathFont.mFamily = TexMathFont::cFamilyRm;
-        auto_ptr<LayoutTree::Node> node
+        unique_ptr<LayoutTree::Node> node
             = mChild->BuildLayoutTree(newState);
         node->mFlavour = LayoutTree::Node::cFlavourOp;
         node->mLimits =
@@ -434,7 +434,7 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
         flavourCommand = flavourCommandTable.find(mCommand);
     if (flavourCommand != flavourCommandTable.end())
     {
-        auto_ptr<LayoutTree::Node> node
+        unique_ptr<LayoutTree::Node> node
             = mChild->BuildLayoutTree(state);
         node->mFlavour = flavourCommand->second;
         if (node->mFlavour == LayoutTree::Node::cFlavourOp)
@@ -509,11 +509,11 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
         accentCommand = accentCommandTable.find(mCommand);
     if (accentCommand != accentCommandTable.end())
     {
-        auto_ptr<LayoutTree::Node> base
+        unique_ptr<LayoutTree::Node> base
             = mChild->BuildLayoutTree(state);
-        auto_ptr<LayoutTree::Node> lower, upper;
+        unique_ptr<LayoutTree::Node> lower, upper;
 
-        auto_ptr<LayoutTree::Node> accent(
+        unique_ptr<LayoutTree::Node> accent(
             new LayoutTree::SymbolOperator(
                 accentCommand->second.mIsStretchy,
                 L"",
@@ -532,20 +532,20 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
         );
 
         if (mCommand == L"\\underline")
-            lower = accent;
+            lower = std::move(accent);
         else
-            upper = accent;
+            upper = std::move(accent);
 
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::Scripts(
                 state.mStyle,
                 LayoutTree::Node::cFlavourOrd,
                 LayoutTree::Node::cLimitsDisplayLimits,
                 state.mColour,
                 false,      // not sideset
-                base,
-                upper,
-                lower
+                std::move(base),
+                std::move(upper),
+                std::move(lower)
             )
         );
     }
@@ -556,50 +556,50 @@ auto_ptr<LayoutTree::Node> MathCommand1Arg::BuildLayoutTree(
 }
 
 
-auto_ptr<LayoutTree::Node> MathStateChange::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathStateChange::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
     // We should only arrive here if there was a state change command all
     // by its lonesome self in its own math list, so we can safely ignore
     // it.
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::Row(state.mStyle, state.mColour)
     );
 }
 
-auto_ptr<LayoutTree::Node> MathColour::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathColour::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
     // See above in MathStateChange::BuildLayoutTree
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::Row(state.mStyle, state.mColour)
     );
 }
 
-auto_ptr<LayoutTree::Node> TextStateChange::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> TextStateChange::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
     // See above in MathStateChange::BuildLayoutTree
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::Row(state.mStyle, state.mColour)
     );
 }
 
-auto_ptr<LayoutTree::Node> TextColour::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> TextColour::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
     // See above in MathStateChange::BuildLayoutTree
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::Row(state.mStyle, state.mColour)
     );
 }
 
 
-auto_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -645,7 +645,7 @@ auto_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
                 break;
         }
 
-        auto_ptr<LayoutTree::Node> inside(
+        unique_ptr<LayoutTree::Node> inside(
             new LayoutTree::Fraction(
                 state.mStyle,
                 state.mColour,
@@ -656,11 +656,11 @@ auto_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
         );
 
         if (hasParentheses)
-            return auto_ptr<LayoutTree::Node>(
+            return unique_ptr<LayoutTree::Node>(
                 new LayoutTree::Fenced(
                     state.mStyle,
                     state.mColour,
-                    L"(", L")", inside
+                    L"(", L")", std::move(inside)
                 )
             );
         else
@@ -672,7 +672,7 @@ auto_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
         TexProcessingState newState = state;
         newState.mStyle = LayoutTree::Node::cStyleScriptScript;
         
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::Root(
                 mChild2->BuildLayoutTree(state),
                 mChild1->BuildLayoutTree(newState),
@@ -686,7 +686,7 @@ auto_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
         TexProcessingState newState = state;
         newState.mStyle = LayoutTree::Node::cStyleText;
 
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::Fraction(
                 LayoutTree::Node::cStyleDisplay,
                 state.mColour,
@@ -714,25 +714,25 @@ auto_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
                 break;
         }
 
-        auto_ptr<LayoutTree::Node> upper, lower;
+        unique_ptr<LayoutTree::Node> upper, lower;
         if (mCommand == L"\\overset")
             upper = mChild1->BuildLayoutTree(newState);
         else        // else underset
             lower = mChild1->BuildLayoutTree(newState);
 
-        auto_ptr<LayoutTree::Node> base =
+        unique_ptr<LayoutTree::Node> base =
             mChild2->BuildLayoutTree(state);
 
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::Scripts(
                 state.mStyle,
                 base->mFlavour,
                 LayoutTree::Node::cLimitsNoLimits,
                 state.mColour,
                 false,      // false = NOT sideset
-                base,
-                upper,
-                lower
+                std::move(base),
+                std::move(upper),
+                std::move(lower)
             )
         );
     }
@@ -743,11 +743,11 @@ auto_ptr<LayoutTree::Node> MathCommand2Args::BuildLayoutTree(
 }
 
 
-auto_ptr<LayoutTree::Node> MathScripts::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathScripts::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
-    auto_ptr<LayoutTree::Node> base, upper, lower;
+    unique_ptr<LayoutTree::Node> base, upper, lower;
 
     LayoutTree::Node::Flavour flavour = LayoutTree::Node::cFlavourOrd;
     LayoutTree::Node::Limits limits =
@@ -794,26 +794,26 @@ auto_ptr<LayoutTree::Node> MathScripts::BuildLayoutTree(
             )
         );
 
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::Scripts(
             state.mStyle,
             flavour,
             LayoutTree::Node::cLimitsDisplayLimits,
             state.mColour,
             isSideset,
-            base,
-            upper,
-            lower
+            std::move(base),
+            std::move(upper),
+            std::move(lower)
         )
     );
 }
 
 
-auto_ptr<LayoutTree::Node> MathLimits::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathLimits::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
-    auto_ptr<LayoutTree::Node> node =
+    unique_ptr<LayoutTree::Node> node =
         mChild->BuildLayoutTree(state);
 
     if (node->mFlavour != LayoutTree::Node::cFlavourOp)
@@ -833,24 +833,24 @@ auto_ptr<LayoutTree::Node> MathLimits::BuildLayoutTree(
     return node;
 }
 
-auto_ptr<LayoutTree::Node> MathGroup::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathGroup::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
     // TeX treates any group enclosed by curly braces as an "ordinary" atom.
     // This is why e.g. "123{,}456" looks different to "123,456"
-    auto_ptr<LayoutTree::Node> node
+    unique_ptr<LayoutTree::Node> node
         = mChild->BuildLayoutTree(state);
     node->mFlavour = LayoutTree::Node::cFlavourOrd;
     return node;
 }
 
 
-auto_ptr<LayoutTree::Node> MathDelimited::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathDelimited::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::Fenced(
             state.mStyle,
             state.mColour,
@@ -878,7 +878,7 @@ struct BigInfo
 };
 
 
-auto_ptr<LayoutTree::Node> MathBig::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathBig::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -919,7 +919,7 @@ auto_ptr<LayoutTree::Node> MathBig::BuildLayoutTree(
             newStyle = LayoutTree::Node::cStyleText;
 
         // FIX: TeX allows "\big."; do we?
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::SymbolOperator(
                 true,       // indicates stretchy="true"
                 bigCommand->second.mSize,
@@ -938,7 +938,7 @@ auto_ptr<LayoutTree::Node> MathBig::BuildLayoutTree(
 }
 
 
-auto_ptr<LayoutTree::Node> MathTableRow::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathTableRow::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -950,11 +950,11 @@ auto_ptr<LayoutTree::Node> MathTableRow::BuildLayoutTree(
 }
 
 
-auto_ptr<LayoutTree::Node> MathTable::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathTable::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
-    auto_ptr<LayoutTree::Table> table(
+    unique_ptr<LayoutTree::Table> table(
         new LayoutTree::Table(state.mStyle, state.mColour)
     );
     table->mRows.reserve(mRows.size());
@@ -979,7 +979,7 @@ auto_ptr<LayoutTree::Node> MathTable::BuildLayoutTree(
             );
     }
 
-    return static_cast<auto_ptr<LayoutTree::Node> >(table);
+    return std::unique_ptr<LayoutTree::Node>(std::move(table));
 }
 
 
@@ -998,7 +998,7 @@ struct EnvironmentInfo
 };
 
 
-auto_ptr<LayoutTree::Node> MathEnvironment::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> MathEnvironment::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -1054,7 +1054,7 @@ auto_ptr<LayoutTree::Node> MathEnvironment::BuildLayoutTree(
                 : LayoutTree::Node::cStyleText;
     }
 
-    auto_ptr<LayoutTree::Node> table = mTable->BuildLayoutTree(newState);
+    unique_ptr<LayoutTree::Node> table = mTable->BuildLayoutTree(newState);
     LayoutTree::Table* tablePtr =
         dynamic_cast<LayoutTree::Table*>(table.get());
     if (!tablePtr)
@@ -1075,19 +1075,19 @@ auto_ptr<LayoutTree::Node> MathEnvironment::BuildLayoutTree(
     )
         return table;
 
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::Fenced(
             fencedStyle,
             state.mColour,
             environmentLookup->second.mLeftDelimiter,
             environmentLookup->second.mRightDelimiter,
-            table
+            std::move(table)
         )
     );
 }
 
 
-auto_ptr<LayoutTree::Node> EnterTextMode::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> EnterTextMode::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -1130,11 +1130,11 @@ auto_ptr<LayoutTree::Node> EnterTextMode::BuildLayoutTree(
 }
 
 
-auto_ptr<LayoutTree::Node> TextList::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> TextList::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
-    auto_ptr<LayoutTree::Row> node(
+    unique_ptr<LayoutTree::Row> node(
         new LayoutTree::Row(state.mStyle, state.mColour)
     );
 
@@ -1154,7 +1154,7 @@ auto_ptr<LayoutTree::Node> TextList::BuildLayoutTree(
             childAsStateChange->Apply(currentState);
         else
         {
-            auto_ptr<LayoutTree::Node>
+            unique_ptr<LayoutTree::Node>
                 newNode = (*child)->BuildLayoutTree(currentState);
 
             LayoutTree::Row* isRow =
@@ -1170,11 +1170,11 @@ auto_ptr<LayoutTree::Node> TextList::BuildLayoutTree(
         }
     }
 
-    return static_cast<auto_ptr<LayoutTree::Node> >(node);
+    return std::unique_ptr<LayoutTree::Node>(std::move(node));
 }
 
 
-auto_ptr<LayoutTree::Node> TextSymbol::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> TextSymbol::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -1218,7 +1218,7 @@ auto_ptr<LayoutTree::Node> TextSymbol::BuildLayoutTree(
         textCommand = textCommandTable.find(mCommand);
 
     if (textCommand != textCommandTable.end())
-        return auto_ptr<LayoutTree::Node>(
+        return unique_ptr<LayoutTree::Node>(
             new LayoutTree::SymbolText(
                 textCommand->second,
                 state.mTextFont.GetMathmlApproximation(),
@@ -1227,7 +1227,7 @@ auto_ptr<LayoutTree::Node> TextSymbol::BuildLayoutTree(
             )
         );
 
-    return auto_ptr<LayoutTree::Node>(
+    return unique_ptr<LayoutTree::Node>(
         new LayoutTree::SymbolText(
             mCommand,
             state.mTextFont.GetMathmlApproximation(),
@@ -1238,7 +1238,7 @@ auto_ptr<LayoutTree::Node> TextSymbol::BuildLayoutTree(
 }
 
 
-auto_ptr<LayoutTree::Node> TextGroup::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> TextGroup::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {
@@ -1246,7 +1246,7 @@ auto_ptr<LayoutTree::Node> TextGroup::BuildLayoutTree(
 }
 
 
-auto_ptr<LayoutTree::Node> TextCommand1Arg::BuildLayoutTree(
+unique_ptr<LayoutTree::Node> TextCommand1Arg::BuildLayoutTree(
     const TexProcessingState& state
 ) const
 {

@@ -50,7 +50,7 @@ namespace blahtex
 class Interface
 {
 private:
-    std::auto_ptr<Manager> mManager;
+    std::unique_ptr<Manager> mManager;
 
 public:
     MathmlOptions mMathmlOptions;

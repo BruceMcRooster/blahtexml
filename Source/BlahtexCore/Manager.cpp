@@ -450,7 +450,7 @@ void Manager::ProcessInput(const wstring& input, bool texvcCompatibility, bool d
 }
 
 
-auto_ptr<MathmlNode> Manager::GenerateMathml(
+unique_ptr<MathmlNode> Manager::GenerateMathml(
     const MathmlOptions& options
 ) const
 {
@@ -471,7 +471,7 @@ auto_ptr<MathmlNode> Manager::GenerateMathml(
     // Build the MathML tree. The nodeCount variables counts the number
     // of nodes being generated; if too many appear, an exception is thrown.
     unsigned nodeCount = 0;
-    auto_ptr<MathmlNode> root = mLayoutTree->BuildMathmlTree(
+    unique_ptr<MathmlNode> root = mLayoutTree->BuildMathmlTree(
         optionsCopy,
         MathmlEnvironment(LayoutTree::Node::cStyleText, RGBColour(0)),
         nodeCount

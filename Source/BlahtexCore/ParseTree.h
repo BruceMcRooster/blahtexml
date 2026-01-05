@@ -172,7 +172,7 @@ namespace ParseTree
 
         // This function converts the parse tree under this node into a
         // layout tree. This is where most of blahtex's hard work is done.
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const = 0;
 
@@ -222,7 +222,7 @@ namespace ParseTree
             mCommand(command)
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -245,17 +245,17 @@ namespace ParseTree
         std::wstring mCommand;
 
         // Node corresponding to the argument of the command.
-        std::auto_ptr<MathNode> mChild;
+        std::unique_ptr<MathNode> mChild;
 
         MathCommand1Arg(
             const std::wstring& command,
-            std::auto_ptr<MathNode> child
+            std::unique_ptr<MathNode> child
         ) :
             mCommand(command),
-            mChild(child)
+            mChild(std::move(child))
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -290,7 +290,7 @@ namespace ParseTree
             TexProcessingState& state
         ) const;
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -324,7 +324,7 @@ namespace ParseTree
             TexProcessingState& state
         ) const;
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -348,24 +348,24 @@ namespace ParseTree
         std::wstring mCommand;
 
         // The two arguments.
-        std::auto_ptr<MathNode> mChild1, mChild2;
+        std::unique_ptr<MathNode> mChild1, mChild2;
 
         // This flag is set for infix commands like "\over".
         bool mIsInfix;
 
         MathCommand2Args(
             const std::wstring& command,
-            std::auto_ptr<MathNode> child1,
-            std::auto_ptr<MathNode> child2,
+            std::unique_ptr<MathNode> child1,
+            std::unique_ptr<MathNode> child2,
             bool isInfix
         ) :
             mCommand(command),
-            mChild1(child1),
-            mChild2(child2),
+            mChild1(std::move(child1)),
+            mChild2(std::move(child2)),
             mIsInfix(isInfix)
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -399,7 +399,7 @@ namespace ParseTree
             mDelimiter(delimiter)
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -421,13 +421,13 @@ namespace ParseTree
     struct MathGroup : MathNode
     {
         // The enclosed material.
-        std::auto_ptr<MathNode> mChild;
+        std::unique_ptr<MathNode> mChild;
 
-        MathGroup(std::auto_ptr<MathNode> child) :
-            mChild(child)
+        MathGroup(std::unique_ptr<MathNode> child) :
+            mChild(std::move(child))
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -453,7 +453,7 @@ namespace ParseTree
 
         ~MathList();
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -475,9 +475,9 @@ namespace ParseTree
     struct MathScripts : MathNode
     {
         // All three fields are optional (NULL indicates an empty field).
-        std::auto_ptr<MathNode> mBase, mUpper, mLower;
+        std::unique_ptr<MathNode> mBase, mUpper, mLower;
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -505,17 +505,17 @@ namespace ParseTree
         // e.g. for the input "x^2\limits_5", the base of the MathScripts
         // node should be a MathLimits node, whose child is the MathSymbol
         // node representing "x".
-        std::auto_ptr<MathNode> mChild;
+        std::unique_ptr<MathNode> mChild;
 
         MathLimits(
             const std::wstring& command,
-            std::auto_ptr<MathNode> child
+            std::unique_ptr<MathNode> child
         ) :
             mCommand(command),
-            mChild(child)
+            mChild(std::move(child))
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -539,19 +539,19 @@ namespace ParseTree
         std::wstring mLeftDelimiter, mRightDelimiter;
 
         // The stuff enclosed by the delimiters:
-        std::auto_ptr<MathNode> mChild;
+        std::unique_ptr<MathNode> mChild;
 
         MathDelimited(
-            std::auto_ptr<MathNode> child,
+            std::unique_ptr<MathNode> child,
             const std::wstring& leftDelimiter,
             const std::wstring& rightDelimiter
         ) :
-            mChild(child),
+            mChild(std::move(child)),
             mLeftDelimiter(leftDelimiter),
             mRightDelimiter(rightDelimiter)
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -577,7 +577,7 @@ namespace ParseTree
 
         ~MathTableRow();
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -603,7 +603,7 @@ namespace ParseTree
 
         ~MathTable();
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -636,19 +636,19 @@ namespace ParseTree
         bool mIsShort;
 
         // The contained table.
-        std::auto_ptr<MathTable> mTable;
+        std::unique_ptr<MathTable> mTable;
 
         MathEnvironment(
             const std::wstring& name,
-            std::auto_ptr<MathTable> table,
+            std::unique_ptr<MathTable> table,
             bool isShort
         ) :
             mName(name),
-            mTable(table),
+            mTable(std::move(table)),
             mIsShort(isShort)
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -675,17 +675,17 @@ namespace ParseTree
         std::wstring mCommand;
 
         // The enclosed *text-mode* node.
-        std::auto_ptr<TextNode> mChild;
+        std::unique_ptr<TextNode> mChild;
 
         EnterTextMode(
             const std::wstring& command,
-            std::auto_ptr<TextNode> child
+            std::unique_ptr<TextNode> child
         ) :
             mCommand(command),
-            mChild(child)
+            mChild(std::move(child))
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -710,7 +710,7 @@ namespace ParseTree
 
         ~TextList();
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -731,13 +731,13 @@ namespace ParseTree
     struct TextGroup : TextNode
     {
         // The enclosed material.
-        std::auto_ptr<TextNode> mChild;
+        std::unique_ptr<TextNode> mChild;
 
-        TextGroup(std::auto_ptr<TextNode> child) :
-            mChild(child)
+        TextGroup(std::unique_ptr<TextNode> child) :
+            mChild(std::move(child))
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -766,7 +766,7 @@ namespace ParseTree
             mCommand(command)
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -800,7 +800,7 @@ namespace ParseTree
             TexProcessingState& state
         ) const;
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -834,7 +834,7 @@ namespace ParseTree
             TexProcessingState& state
         ) const;
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
@@ -858,17 +858,17 @@ namespace ParseTree
         std::wstring mCommand;
 
         // Node corresponding to the argument of the command.
-        std::auto_ptr<TextNode> mChild;
+        std::unique_ptr<TextNode> mChild;
 
         TextCommand1Arg(
             const std::wstring& command,
-            std::auto_ptr<TextNode> child
+            std::unique_ptr<TextNode> child
         ) :
             mCommand(command),
-            mChild(child)
+            mChild(std::move(child))
         { }
 
-        virtual std::auto_ptr<LayoutTree::Node> BuildLayoutTree(
+        virtual std::unique_ptr<LayoutTree::Node> BuildLayoutTree(
             const TexProcessingState& state
         ) const;
 
