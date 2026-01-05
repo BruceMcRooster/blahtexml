@@ -9,13 +9,12 @@ class ErrorTests(unittest.TestCase):
 		print("")
 	
 	def validateError(self, input, errorId, startPos, length):
-		p = Popen(['../Build/blahtex', '--mathml'], stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+		with Popen(['../Build/blahtex', '--mathml'], stdout=PIPE, stdin=PIPE, stderr=STDOUT) as p:
+			p.stdin.write(input.encode('utf-8'))
+			p.stdin.close()
+			p.wait()
 		
-		p.stdin.write(input)
-		p.stdin.close()
-		p.wait()
-		
-		rootNode = ET.fromstring(p.stdout.read())
+			rootNode = ET.fromstring(p.stdout.read())
 		
 		errorNode = rootNode.find("error")
 		

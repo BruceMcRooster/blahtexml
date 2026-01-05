@@ -10,15 +10,14 @@ class OutputTests(unittest.TestCase):
 		print("")
 	
 	def validateXMLTree(self, input, expected):
-		p = Popen(['../Build/blahtex', '--mathml', '--spacing', 'moderate'], stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+		with Popen(['../Build/blahtex', '--mathml', '--spacing', 'moderate'], stdout=PIPE, stdin=PIPE, stderr=STDOUT) as p:
+			p.stdin.write(input.encode('utf-8'))
+			p.stdin.close()
+			p.wait()
 		
-		p.stdin.write(input)
-		p.stdin.close()
-		p.wait()
+			actual = p.stdout.read()
 		
 		parser = etree.XMLParser(remove_blank_text=True)
-		
-		actual = p.stdout.read()
 		
 		rootNode = etree.XML(actual, parser=parser)
 		expectedRootNode = etree.XML(expected, parser=parser)
@@ -26,7 +25,7 @@ class OutputTests(unittest.TestCase):
 		o1 = etree.tostring(rootNode)
 		o2 = etree.tostring(expectedRootNode)
 		
-		self.assertEquals(o1, o2)
+		self.assertEqual(o1, o2)
 
 
 class TextTests(OutputTests):
@@ -255,7 +254,7 @@ class SymbolTests(OutputTests):
 			</blahtex>
 		"""
 		
-		self.validateXMLTree("| A \cup B \cup C | = | A | + | B | + | C | - | A \cap B | - | B \cap C | - | A \cap C | + | A \cap B \cap C |", output)
+		self.validateXMLTree("| A \\cup B \\cup C | = | A | + | B | + | C | - | A \\cap B | - | B \\cap C | - | A \\cap C | + | A \\cap B \\cap C |", output)
 
 
 class VariableTests(OutputTests):
