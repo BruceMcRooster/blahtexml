@@ -1,6 +1,17 @@
 Blahtex(ml) version 1.0
 ======================================
 
+Note: This version is an unthoroughly tested migration of the original code. It attempts to make the codebase work with C++17 or later compilers, where auto_ptr (which is heavily used throughout the codebase) is removed. Use at your own risk.
+
+The following changes were made, based on clang-tidy's "modernize-replace-auto-ptr" approach:
+    * auto_ptr was replaced with unique_ptr
+    * assignments and passing of auto_ptrs were wrapping in std::move (e.g. a = b -> a = std::move(b))
+    * static_cast<auto_ptr<Type>>(ptr) -> std::unique_ptr<Type>(std::move(ptr))
+
+The modified code compiled with clang 17.0.0 and ran through all tests with the same memory leaks as before and no allocation issues.
+
+======================================
+
 Copyright (c) 2006, David Harvey
 Copyright (c) 2007-2023, Gilles Van Assche
 All rights reserved.
