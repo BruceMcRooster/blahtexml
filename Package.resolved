@@ -1,0 +1,15 @@
+{
+  "originHash" : "d859da57f8601611cea20be26cd8bd300f2c01466f680d78c06e4d7078640c62",
+  "pins" : [
+    {
+      "identity" : "swiftwstringcompat",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/BruceMcRooster/SwiftWStringCompat.git",
+      "state" : {
+        "revision" : "473f38515536c1a0ca047f914c4e670eff38f3e0",
+        "version" : "1.0.0"
+      }
+    }
+  ],
+  "version" : 3
+}

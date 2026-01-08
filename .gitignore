@@ -8,3 +8,12 @@ blahtex
 blahtex.exe
 blahtexml
 blahtexml.exe
+
+!/Sources/Blahtex/
+/.build
+/Packages
+xcuserdata/
+DerivedData/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.netrc
