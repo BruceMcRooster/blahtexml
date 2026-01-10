@@ -2,7 +2,14 @@ import Foundation
 import blahtexcxx
 import WStringCompat
 
-/// A wrapper class for Blahtex's Interface class
+/// A wrapper class for Blahtex's Interface class.
+///
+/// - Warning:
+/// The underlying C++ library is not thread-safe, 
+/// and thus prevents concurrent use of ``BlahtexRenderer``.
+/// A solution (though untested), if you have to use it concurrently, 
+/// may be to intentionally call the renderer once as a warmup,
+/// because some static variables may need to be initialized.
 public class BlahtexRenderer {
     private var interface: blahtexwrapper.Interface
     
