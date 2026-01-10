@@ -6,7 +6,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/BruceMcRooster/SwiftWStringCompat.git",
       "state" : {
-        "revision" : "473f38515536c1a0ca047f914c4e670eff38f3e0",
+        "revision" : "c108c7440cd4ec58a0bd783817a2a5252b77c5af",
         "version" : "1.0.0"
       }
     }
