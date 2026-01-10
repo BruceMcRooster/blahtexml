@@ -25,12 +25,26 @@ import Testing
     let renderer = BlahtexRenderer()
     
     #expect(throws: BlahtexRenderer.BlahtexError
-        .blahtexError("UnmatchedOpenBrace")) {
+        .blahtexError(code: "UnmatchedOpenBrace", args: [])) {
         try renderer.processInput(input)
     }
     
     #expect(throws: BlahtexRenderer.BlahtexError
         .otherError("Layout tree not yet built in Manager::GenerateMathml")) {
         try renderer.getMathML()
+    }
+}
+
+@Test func errorWithArgs() async throws {
+    let input = "\\begin{bmatrix}5 \\\\ 7\\end{matrix}"
+    
+    let renderer = BlahtexRenderer()
+    
+    #expect(throws: BlahtexRenderer.BlahtexError
+        .blahtexError(
+            code: "MismatchedBeginAndEnd", 
+            args: ["\\begin{bmatrix}", "\\end{matrix}"]
+        )) {
+        try renderer.processInput(input)
     }
 }

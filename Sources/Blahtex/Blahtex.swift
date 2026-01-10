@@ -17,12 +17,36 @@ public class BlahtexRenderer {
         case unconvertibleString
         /// Some defined Blahtex error occured.
         /// Usually this represents an issue with the input.
-        /// The error message provided by Blahtex is included, if it can be parsed.
-        case blahtexError(String?)
+        /// The error code provided by Blahtex is included, if it can be parsed.
+        /// Additionally, any arguments provided related to that error will be included in `args`.
+        /// If there was a failure parsing, ``BlahtexError/unconvertibleString`` will be thrown instead.
+        case blahtexError(code: String, args: [String])
         /// Some other C++ exception occurred.
         /// This is likely the fault of the caller.
         /// The string representation from `std::exception.what()` is included.
         case otherError(String)
+        
+        internal init(for exception: blahtexwrapper.AnyException) {
+            if exception.isBlahtexException() {
+                guard let code = String(exception.blahtexException().GetCode()) else {
+                    self = .unconvertibleString
+                    return
+                }
+                let argsVec = exception.blahtexException().GetArgs()
+                
+                guard let args = try? argsVec.map({ 
+                    guard let asString = String($0) else { throw BlahtexError.unconvertibleString }
+                    return asString
+                }) else { // An error was thrown parsing one of the strings
+                    self = .unconvertibleString 
+                    return
+                }
+                
+                self = .blahtexError(code: code, args: args)
+            } else {
+                self = .otherError(String(exception.standardException().GetMessage()))
+            }
+        }
     }
     
     /// Processes some Blahtex input. Internally, Blahtex will build a tree representation of the code.
@@ -34,11 +58,8 @@ public class BlahtexRenderer {
         let result = interface.ProcessInput(wstring, displayStyle)
         if result.isException() {
             let exception = result.exception()
-            if exception.isBlahtexException() {
-                throw .blahtexError(String(exception.blahtexException().GetCode()))
-            } else {
-                throw .otherError(String(exception.standardException().GetMessage()))
-            }
+            
+            throw BlahtexError(for: exception)
         }
     }
     
@@ -49,11 +70,8 @@ public class BlahtexRenderer {
         
         guard !result.isException() else {
             let exception = result.exception()
-            if exception.isBlahtexException() {
-                throw .blahtexError(String(exception.blahtexException().GetCode()))
-            } else {
-                throw .otherError(String(exception.standardException().GetMessage()))
-            }
+            
+            throw BlahtexError(for: exception)
         }
         
         let mathML = result.value()
