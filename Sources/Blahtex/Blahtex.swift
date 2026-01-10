@@ -20,7 +20,7 @@ public class BlahtexRenderer {
         /// The error code provided by Blahtex is included, if it can be parsed.
         /// Additionally, any arguments provided related to that error will be included in `args`.
         /// If there was a failure parsing, ``BlahtexError/unconvertibleString`` will be thrown instead.
-        case blahtexError(code: String, args: [String])
+        case inputError(InputError)
         /// Some other C++ exception occurred.
         /// This is likely the fault of the caller.
         /// The string representation from `std::exception.what()` is included.
@@ -42,9 +42,57 @@ public class BlahtexRenderer {
                     return
                 }
                 
-                self = .blahtexError(code: code, args: args)
+                self = .inputError(.init(code: code, args: args))
             } else {
                 self = .otherError(String(exception.standardException().GetMessage()))
+            }
+        }
+        
+        /// Represents an error thrown by the Blahtex parser due to bad input
+        /// 
+        /// Generally, the best way to work with these is to report the ``errorMessage()``,
+        /// which uses the ``code`` and ``args`` to generate an understandable error message in English.
+        public struct InputError: Sendable, Equatable {
+            /// The code for the error.
+            ///
+            /// A full list of error codes can be found in `/Source/Messages.cpp`
+            public let code: String
+            /// The arguments relevant for properly displaying an error.
+            /// For example, these might include the name of an unrecognized command.
+            public let args: [String]
+            
+            internal init(code: String, args: [String]) {
+                self.code = code
+                self.args = args
+            }
+            
+            /// The error message, in English, that explains the problem.
+            ///
+            /// For a full list of messages related to their codes, see `Source/Messages.cpp`.
+            /// `$0`, `$1`, etc. substitute in corresponding ``args``.
+            public func errorMessage() -> String {
+                // Need to recreate the source exception to pass to GetErrorMessage.
+                // Couldn't have stored it because we hid that behind the wrapper.
+                guard let wstringCode = std.wstring(self.code) else { return "" }
+                
+                // May be nil either because we could not parse them 
+                // (unexpected, but GetErrorMessage will handle and put "???"),
+                // or because the argument just does not exist
+                let arg1: std.wstring? = (args.count > 0) ? std.wstring(args[0]) : nil
+                let arg2: std.wstring? = (args.count > 1) ? std.wstring(args[1]) : nil
+                let arg3: std.wstring? = (args.count > 2) ? std.wstring(args[2]) : nil
+                
+                
+                let asException = blahtex.Exception(
+                    wstringCode, 
+                    arg1 ?? std.wstring(), 
+                    arg2 ?? std.wstring(), 
+                    arg3 ?? std.wstring()
+                )
+                
+                let wstringMessage = GetErrorMessage(asException)
+                
+                return String(wstringMessage) ?? ""
             }
         }
     }

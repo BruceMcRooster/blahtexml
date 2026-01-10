@@ -12,6 +12,8 @@
 #include "Token.h"
 #include "XmlEncode.h"
 
+#include "../Messages.cpp"
+
 #include <optional>
 #include <string>
 #include <vector>

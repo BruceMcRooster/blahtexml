@@ -25,7 +25,7 @@ import Testing
     let renderer = BlahtexRenderer()
     
     #expect(throws: BlahtexRenderer.BlahtexError
-        .blahtexError(code: "UnmatchedOpenBrace", args: [])) {
+        .inputError(.init(code: "UnmatchedOpenBrace", args: []))) {
         try renderer.processInput(input)
     }
     
@@ -41,10 +41,10 @@ import Testing
     let renderer = BlahtexRenderer()
     
     #expect(throws: BlahtexRenderer.BlahtexError
-        .blahtexError(
+        .inputError(.init(
             code: "MismatchedBeginAndEnd", 
             args: ["\\begin{bmatrix}", "\\end{matrix}"]
-        )) {
+        ))) {
         try renderer.processInput(input)
     }
 }
