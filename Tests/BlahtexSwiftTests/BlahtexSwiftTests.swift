@@ -50,4 +50,45 @@ struct BlahtexTests {
                 try renderer.processInput(input)
             }
     }
+    
+    @Test func getNoArgErrorMessage() async throws {
+        let input = "2^{5"
+        
+        let renderer = BlahtexRenderer()
+        
+        do {
+            try renderer.processInput(input)
+            #expect(Bool(false), "No error was thrown")
+        } catch {
+            guard case let .inputError(inputError) = error else {
+                #expect(Bool(false), "Should have thrown inputError")
+                throw error
+            }
+            
+            #expect(inputError.code == "UnmatchedOpenBrace")
+            
+            #expect(inputError.errorMessage() == "Encountered open brace \"{\" without matching close brace \"}\"")
+        }
+    }
+    
+    @Test func getMultiArgErrorMessage() async throws {
+        let input = "\\begin{bmatrix}5 \\\\ 7\\end{matrix}"
+        
+        let renderer = BlahtexRenderer()
+        
+        do {
+            try renderer.processInput(input)
+            #expect(Bool(false), "No error was thrown")
+        } catch {
+            guard case let .inputError(inputError) = error else {
+                #expect(Bool(false), "Should have thrown inputError")
+                throw error
+            }
+            
+            #expect(inputError.code == "MismatchedBeginAndEnd")
+            #expect(inputError.args.count == 2)
+            
+            #expect(inputError.errorMessage() == "The commands \"\(inputError.args[0])\" and \"\(inputError.args[1])\" do not match")
+        }
+    }
 }
