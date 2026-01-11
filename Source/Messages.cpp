@@ -29,7 +29,7 @@ using namespace std;
 // FIX: a future version of the command line application should have a
 // "--language" option and read error messages from a file.
 
-pair<wstring, wstring> gEnglishMessagesArray[] =
+static pair<wstring, wstring> gEnglishMessagesArray[] =
 {
     // Input syntax errors:
 
@@ -265,16 +265,23 @@ pair<wstring, wstring> gEnglishMessagesArray[] =
     )
 };
 
-wishful_hash_map<wstring, wstring> gEnglishMessagesTable(
-    gEnglishMessagesArray,
-    END_ARRAY(gEnglishMessagesArray)
-);
+// In function instead of variable to guarantee initialization on first access
+// when included via header in Swift/C++ interop
+wishful_hash_map<wstring, wstring>& getEnglishMessagesTable()
+{
+    static wishful_hash_map<wstring, wstring> table(
+        gEnglishMessagesArray,
+        END_ARRAY(gEnglishMessagesArray)
+    );
+    return table;
+}
 
 
 // GetErrorMessage() converts the given exception into an English
 // string, using the table gEnglishMessagesTable.
 wstring GetErrorMessage(const blahtex::Exception& e)
 {
+    wishful_hash_map<wstring, wstring>& gEnglishMessagesTable = getEnglishMessagesTable();
     wishful_hash_map<wstring, wstring>::const_iterator
         messageLookup = gEnglishMessagesTable.find(e.GetCode());
     if (messageLookup == gEnglishMessagesTable.end())
@@ -310,6 +317,7 @@ wstring GetErrorMessage(const blahtex::Exception& e)
 // their corresponding messages.
 wstring GetErrorMessages()
 {
+    wishful_hash_map<wstring, wstring>& gEnglishMessagesTable = getEnglishMessagesTable();
     wstring output;
 
     for (wishful_hash_map<wstring, wstring>::const_iterator
