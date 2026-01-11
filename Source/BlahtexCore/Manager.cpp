@@ -19,6 +19,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <sstream>
 #include <stdexcept>
 #include <iterator>
+#include <mutex>
 #include "Manager.h"
 #include "Parser.h"
 
@@ -322,16 +323,14 @@ Manager::Manager()
     if (sizeof(RGBColour) != 4)
         throw runtime_error("The \"unsigned\" type is not 4 bytes wide!");
 
-    // Tokenise the standard macros if it hasn't been done already.
-
-    if (gTexvcCompatibilityMacrosTokenised.empty())
-        Tokenise(
-            gTexvcCompatibilityMacros,
-            gTexvcCompatibilityMacrosTokenised
-        );
-
-    if (gStandardMacrosTokenised.empty())
+    // Guaranteed thread-safe initialization since C++11.
+    static std::once_flag tokeniseOnceFlag;
+    // Make sure lazy initialization only happens once,
+    // because otherwise multithreaded Manager initializations can race each other.
+    std::call_once(tokeniseOnceFlag, []() {
+        Tokenise(gTexvcCompatibilityMacros, gTexvcCompatibilityMacrosTokenised);
         Tokenise(gStandardMacros, gStandardMacrosTokenised);
+    });
 
     mStrictSpacingRequested = false;
 }

@@ -2,7 +2,7 @@ import Testing
 
 @testable import Blahtex
 
-@Suite("Blahtex Tests", .serialized) 
+@Suite("Blahtex Tests")
 struct BlahtexTests {
     @Test func simpleOutput() async throws {
         let input = "| A \\cup B \\cup C | = | A | + | B | + | C | - | A \\cap B | - | B \\cap C | - | A \\cap C | + | A \\cap B \\cap C |"
